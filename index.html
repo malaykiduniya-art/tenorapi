@@ -1,19 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Tenor GIF Fetcher</title>
+    <title>Tenor API Proxy</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        img { max-width: 100%; margin-top: 20px; border-radius: 8px; }
-        .error { color: red; margin-top: 20px; }
+        body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        img { max-width: 100vw; max-height: 100vh; object-fit: contain; }
     </style>
 </head>
 <body>
-
-    <h2>Tenor GIF Viewer</h2>
-    <p>Paste a Tenor URL into the address bar: <code>?getgif=URL</code></p>
-
     <div id="output"></div>
 
     <script>
@@ -22,26 +17,27 @@
             const tenorUrl = params.get('getgif');
             const output = document.getElementById('output');
 
-            if (!tenorUrl) return;
+            if (!tenorUrl) {
+                output.innerHTML = "<p style='color:white'>Usage: ?getgif=URL</p>";
+                return;
+            }
 
             try {
-                // We use a CORS proxy to allow the browser to read the Tenor HTML
-                const proxy = "https://corsproxy.io/?";
+                // Use AllOrigins to fetch the HTML content
+                const proxy = "https://api.allorigins.win/get?url=";
                 const response = await fetch(proxy + encodeURIComponent(tenorUrl));
-                const html = await response.text();
-
-                // Find the direct GIF link in the meta tags
-                const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+\.gif)"/i);
+                const data = await response.json();
+                
+                // Extract the direct gif link from the og:image meta tag
+                const match = data.contents.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+\.gif)"/i);
                 
                 if (match && match[1]) {
-                    const img = document.createElement('img');
-                    img.src = match[1];
-                    output.appendChild(img);
+                    output.innerHTML = `<img src="${match[1]}" alt="GIF">`;
                 } else {
-                    output.innerHTML = "<p class='error'>Direct GIF not found. Make sure it's a Tenor link.</p>";
+                    output.innerHTML = "<p style='color:white'>Direct GIF URL not found.</p>";
                 }
             } catch (err) {
-                output.innerHTML = "<p class='error'>Error fetching GIF. The proxy might be down.</p>";
+                output.innerHTML = "<p style='color:white'>Error fetching via proxy.</p>";
             }
         }
 
