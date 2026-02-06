@@ -2,46 +2,48 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Tenor API Proxy</title>
+    <link rel="preconnect" href="https://api.allorigins.win">
+    <title>Fast Tenor Proxy</title>
     <style>
-        body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        img { max-width: 100vw; max-height: 100vh; object-fit: contain; }
+        body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        img { max-width: 100vw; max-height: 100vh; object-fit: contain; display: none; }
+        .loading { color: #555; font-family: sans-serif; }
     </style>
 </head>
 <body>
-    <div id="output"></div>
+    <div id="status" class="loading">Loading GIF...</div>
+    <div id="view"></div>
 
     <script>
-        async function fetchGif() {
+        async function getGif() {
             const params = new URLSearchParams(window.location.search);
-            const tenorUrl = params.get('getgif');
-            const output = document.getElementById('output');
-
-            if (!tenorUrl) {
-                output.innerHTML = "<p style='color:white'>Usage: ?getgif=URL</p>";
-                return;
-            }
+            const target = params.get('getgif');
+            if (!target) return;
 
             try {
-                // Use AllOrigins to fetch the HTML content
-                const proxy = "https://test.cors.workers.dev/?";
-                const response = await fetch(proxy + encodeURIComponent(tenorUrl));
-                const data = await response.json();
-                
-                // Extract the direct gif link from the og:image meta tag
-                const match = data.contents.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+\.gif)"/i);
+                // 'raw' is faster as it doesn't wrap the result in JSON
+                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`);
+                const html = await response.text();
+
+                // Regex search for the direct GIF link
+                const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+\.gif)"/i);
                 
                 if (match && match[1]) {
-                    output.innerHTML = `<img src="${match[1]}" alt="GIF">`;
+                    const img = new Image();
+                    img.src = match[1];
+                    img.onload = () => {
+                        document.getElementById('status').style.display = 'none';
+                        img.style.display = 'block';
+                    };
+                    document.getElementById('view').appendChild(img);
                 } else {
-                    output.innerHTML = "<p style='color:white'>Direct GIF URL not found.</p>";
+                    document.getElementById('status').innerText = "Direct GIF link not found.";
                 }
             } catch (err) {
-                output.innerHTML = "<p style='color:white'>Error fetching via proxy.</p>";
+                document.getElementById('status').innerText = "Fast Proxy failed. Try refreshing.";
             }
         }
-
-        fetchGif();
+        getGif();
     </script>
 </body>
 </html>
