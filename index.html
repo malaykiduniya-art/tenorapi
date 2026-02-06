@@ -2,47 +2,29 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Fast Tenor Proxy</title>
-    <style>
-        body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        img { max-width: 100vw; max-height: 100vh; object-fit: contain; display: none; }
-        .loading { color: #555; font-family: sans-serif; }
-    </style>
-</head>
-<body>
-    <div id="status" class="loading">Loading GIF...</div>
-    <div id="view"></div>
-
     <script>
-        async function getGif() {
+        async function redirect() {
             const params = new URLSearchParams(window.location.search);
             const target = params.get('getgif');
             if (!target) return;
 
             try {
-                // 'raw' is faster as it doesn't wrap the result in JSON
                 const response = await fetch(`https://viprix.deno.dev/?target=${encodeURIComponent(target)}`);
                 const html = await response.text();
-
-                // Regex search for the direct GIF link
                 const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+\.gif)"/i);
                 
                 if (match && match[1]) {
-                    const img = new Image();
-                    img.src = match[1];
-                    img.onload = () => {
-                        document.getElementById('status').style.display = 'none';
-                        img.style.display = 'block';
-                    };
-                    document.getElementById('view').appendChild(img);
-                } else {
-                    document.getElementById('status').innerText = "Direct GIF link not found.";
+                    // This sends the browser directly to the GIF URL
+                    window.location.replace(match[1]);
                 }
             } catch (err) {
-                document.getElementById('status').innerText = "Fast Proxy failed. Try refreshing.";
+                document.body.innerText = "Redirect failed.";
             }
         }
-        getGif();
+        redirect();
     </script>
+</head>
+<body>
+    Redirecting to GIF...
 </body>
 </html>
