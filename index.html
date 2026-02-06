@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tenor GIF Fetcher</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        img { max-width: 100%; margin-top: 20px; border-radius: 8px; }
+        .error { color: red; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Tenor GIF Viewer</h2>
+    <p>Paste a Tenor URL into the address bar: <code>?getgif=URL</code></p>
+
+    <div id="output"></div>
+
+    <script>
+        async function fetchGif() {
+            const params = new URLSearchParams(window.location.search);
+            const tenorUrl = params.get('getgif');
+            const output = document.getElementById('output');
+
+            if (!tenorUrl) return;
+
+            try {
+                // We use a CORS proxy to allow the browser to read the Tenor HTML
+                const proxy = "https://corsproxy.io/?";
+                const response = await fetch(proxy + encodeURIComponent(tenorUrl));
+                const html = await response.text();
+
+                // Find the direct GIF link in the meta tags
+                const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+\.gif)"/i);
+                
+                if (match && match[1]) {
+                    const img = document.createElement('img');
+                    img.src = match[1];
+                    output.appendChild(img);
+                } else {
+                    output.innerHTML = "<p class='error'>Direct GIF not found. Make sure it's a Tenor link.</p>";
+                }
+            } catch (err) {
+                output.innerHTML = "<p class='error'>Error fetching GIF. The proxy might be down.</p>";
+            }
+        }
+
+        fetchGif();
+    </script>
+</body>
+</html>
