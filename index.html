@@ -22,7 +22,7 @@
 
             try {
                 // 'raw' is faster as it doesn't wrap the result in JSON
-                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`);
+                const response = await fetch(`https://viprix.deno.dev/?target=${encodeURIComponent(target)}`);
                 const html = await response.text();
 
                 // Regex search for the direct GIF link
